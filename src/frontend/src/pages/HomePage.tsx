@@ -14,11 +14,13 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
+import { useLogo } from "../hooks/useLogo";
 import {
   useAllStudents,
   usePendingFeesForMonth,
   useTotalIncomeForMonth,
 } from "../hooks/useQueries";
+import { useSettingsName } from "../hooks/useSettingsName";
 import { seedSampleData } from "../lib/seedData";
 import { topicLogStore } from "../lib/topicLogStore";
 
@@ -54,6 +56,8 @@ export default function HomePage() {
   const qc = useQueryClient();
   const month = currentMonth();
 
+  const instituteName = useSettingsName();
+  const logo = useLogo();
   const { data: students = [], isLoading: loadingStudents } = useAllStudents();
   const { data: pendingFees = [], isLoading: loadingPending } =
     usePendingFeesForMonth(month);
@@ -112,17 +116,29 @@ export default function HomePage() {
 
   return (
     <div className="min-h-full bg-background px-4 py-6 max-w-2xl mx-auto">
-      <h1 className="text-3xl font-bold text-foreground mb-1">
-        Home Dashboard
-      </h1>
-      <p className="text-muted-foreground text-sm mb-6">
-        {new Date().toLocaleDateString("en-IN", {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        })}
-      </p>
+      {/* Academy branding block */}
+      <div className="flex items-center gap-3 mb-4">
+        {logo && (
+          <img
+            src={logo}
+            alt="Academy Logo"
+            className="h-14 w-14 object-contain rounded-xl border border-border shadow-sm bg-white"
+          />
+        )}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground leading-tight">
+            {instituteName}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {new Date().toLocaleDateString("en-IN", {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </p>
+        </div>
+      </div>
 
       <section data-ocid="home.section">
         <h2 className="text-base font-semibold text-foreground mb-3">

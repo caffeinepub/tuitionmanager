@@ -10,6 +10,7 @@ import { topicLogStore } from "./topicLogStore";
 export const sampleStudents: Omit<Student, "id">[] = [
   {
     name: "Aarav Sharma",
+    academicSession: "2025-26",
     className: "Class 10",
     batch: "Morning 7-8 AM",
     monthlyFee: 1500n,
@@ -17,6 +18,7 @@ export const sampleStudents: Omit<Student, "id">[] = [
   },
   {
     name: "Priya Patel",
+    academicSession: "2025-26",
     className: "Class 9",
     batch: "Morning 7-8 AM",
     monthlyFee: 1400n,
@@ -24,6 +26,7 @@ export const sampleStudents: Omit<Student, "id">[] = [
   },
   {
     name: "Rohan Mehta",
+    academicSession: "2025-26",
     className: "Class 8",
     batch: "Evening 5-6 PM",
     monthlyFee: 1200n,
@@ -31,6 +34,7 @@ export const sampleStudents: Omit<Student, "id">[] = [
   },
   {
     name: "Sneha Gupta",
+    academicSession: "2025-26",
     className: "Class 10",
     batch: "Evening 5-6 PM",
     monthlyFee: 1500n,
@@ -38,6 +42,7 @@ export const sampleStudents: Omit<Student, "id">[] = [
   },
   {
     name: "Arjun Singh",
+    academicSession: "2025-26",
     className: "Class 7",
     batch: "Evening 6-7 PM",
     monthlyFee: 1100n,
@@ -45,6 +50,7 @@ export const sampleStudents: Omit<Student, "id">[] = [
   },
   {
     name: "Kavya Nair",
+    academicSession: "2025-26",
     className: "Class 6",
     batch: "Evening 6-7 PM",
     monthlyFee: 1000n,

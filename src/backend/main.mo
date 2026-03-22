@@ -5,6 +5,8 @@ import Text "mo:core/Text";
 import List "mo:core/List";
 import Runtime "mo:core/Runtime";
 
+
+
 actor {
   public type Settings = {
     instituteName : Text;
@@ -17,6 +19,7 @@ actor {
     batch : Text;
     monthlyFee : Nat;
     contactNumber : Text;
+    academicSession : Text;
   };
 
   public type AttendanceRecord = {
@@ -86,7 +89,8 @@ actor {
   public shared ({ caller }) func addStudent(student : Student) : async Nat {
     let id = nextStudentId;
     let newStudent : Student = {
-      student with id;
+      student with
+      id;
     };
     students.add(id, newStudent);
     nextStudentId += 1;
@@ -94,10 +98,11 @@ actor {
   };
 
   public shared ({ caller }) func updateStudent(id : Nat, student : Student) : async () {
-    if (not students.containsKey(id)) { Runtime.trap("Student not found") };
+    if (not students.containsKey(id)) {
+      Runtime.trap("Student not found");
+    };
     let updatedStudent : Student = {
-      student with
-      id;
+      student with id;
     };
     students.add(id, updatedStudent);
   };
@@ -143,8 +148,7 @@ actor {
   public shared ({ caller }) func updateTopicLog(id : Nat, log : TopicLog) : async () {
     if (not topicLogs.containsKey(id)) { Runtime.trap("Topic log not found") };
     let updatedLog : TopicLog = {
-      log with
-      id;
+      log with id;
     };
     topicLogs.add(id, updatedLog);
   };

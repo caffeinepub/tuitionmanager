@@ -116,6 +116,7 @@ export interface TopicLog {
 export interface Student {
     id: bigint;
     name: string;
+    academicSession: string;
     batch: string;
     contactNumber: string;
     monthlyFee: bigint;

@@ -11,6 +11,7 @@ import { IDL } from '@icp-sdk/core/candid';
 export const Student = IDL.Record({
   'id' : IDL.Nat,
   'name' : IDL.Text,
+  'academicSession' : IDL.Text,
   'batch' : IDL.Text,
   'contactNumber' : IDL.Text,
   'monthlyFee' : IDL.Nat,
@@ -76,6 +77,7 @@ export const idlFactory = ({ IDL }) => {
   const Student = IDL.Record({
     'id' : IDL.Nat,
     'name' : IDL.Text,
+    'academicSession' : IDL.Text,
     'batch' : IDL.Text,
     'contactNumber' : IDL.Text,
     'monthlyFee' : IDL.Nat,

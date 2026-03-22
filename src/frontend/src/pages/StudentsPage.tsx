@@ -46,6 +46,11 @@ import {
 } from "../hooks/useQueries";
 
 const CLASS_OPTIONS = [
+  "Class 1",
+  "Class 2",
+  "Class 3",
+  "Class 4",
+  "Class 5",
   "Class 6",
   "Class 7",
   "Class 8",
@@ -55,12 +60,15 @@ const CLASS_OPTIONS = [
   "Class 12",
 ];
 
+const SESSION_OPTIONS = ["2024-25", "2025-26", "2026-27", "2027-28"];
+
 interface StudentFormData {
   name: string;
   className: string;
   batch: string;
   monthlyFee: string;
   contactNumber: string;
+  academicSession: string;
 }
 
 const DEFAULT_FORM: StudentFormData = {
@@ -69,6 +77,7 @@ const DEFAULT_FORM: StudentFormData = {
   batch: "",
   monthlyFee: "",
   contactNumber: "",
+  academicSession: "2025-26",
 };
 
 export default function StudentsPage() {
@@ -98,6 +107,7 @@ export default function StudentsPage() {
       batch: s.batch,
       monthlyFee: s.monthlyFee.toString(),
       contactNumber: s.contactNumber,
+      academicSession: s.academicSession || "2025-26",
     });
     setSheetOpen(true);
   }
@@ -114,6 +124,7 @@ export default function StudentsPage() {
       batch: form.batch.trim(),
       monthlyFee: BigInt(form.monthlyFee || "0"),
       contactNumber: form.contactNumber.trim(),
+      academicSession: form.academicSession,
     };
     try {
       if (editing) {
@@ -194,6 +205,26 @@ export default function StudentsPage() {
                     {CLASS_OPTIONS.map((c) => (
                       <SelectItem key={c} value={c}>
                         {c}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Academic Session *</Label>
+                <Select
+                  value={form.academicSession}
+                  onValueChange={(v) =>
+                    setForm((p) => ({ ...p, academicSession: v }))
+                  }
+                >
+                  <SelectTrigger data-ocid="students.session.select">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SESSION_OPTIONS.map((s) => (
+                      <SelectItem key={s} value={s}>
+                        {s}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -291,6 +322,11 @@ export default function StudentsPage() {
                 <p className="text-xs text-muted-foreground">
                   {s.className} · {s.batch}
                 </p>
+                {s.academicSession && (
+                  <p className="text-xs text-muted-foreground/70">
+                    Session: {s.academicSession}
+                  </p>
+                )}
                 <p className="text-xs text-primary font-medium">
                   ₹{s.monthlyFee.toString()}/mo
                 </p>

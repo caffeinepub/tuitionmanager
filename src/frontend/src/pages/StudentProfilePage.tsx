@@ -219,6 +219,11 @@ export default function StudentProfilePage() {
             <p className="text-sm text-muted-foreground">
               {student.className} · {student.batch}
             </p>
+            {student.academicSession && (
+              <p className="text-xs text-muted-foreground">
+                Session: {student.academicSession}
+              </p>
+            )}
             {student.contactNumber && (
               <a
                 href={`tel:${student.contactNumber}`}
@@ -259,6 +264,12 @@ export default function StudentProfilePage() {
               <div>
                 <p className="text-xs text-muted-foreground">Batch</p>
                 <p className="font-semibold">{student.batch}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Session</p>
+                <p className="font-semibold">
+                  {student.academicSession || "—"}
+                </p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Monthly Fee</p>
@@ -330,7 +341,11 @@ export default function StudentProfilePage() {
                 {attendance.map((a) => (
                   <div
                     key={a.date}
-                    className={`rounded-lg p-1.5 text-center text-xs ${a.isPresent ? "bg-green-50 text-green-700" : "bg-red-50 text-red-500"}`}
+                    className={`rounded-lg p-1.5 text-center text-xs ${
+                      a.isPresent
+                        ? "bg-green-50 text-green-700"
+                        : "bg-red-50 text-red-500"
+                    }`}
                     title={a.date}
                   >
                     {a.date.split("-")[2]}
@@ -499,7 +514,9 @@ export default function StudentProfilePage() {
                 <div>
                   <p className="text-xs text-muted-foreground">Pending</p>
                   <p
-                    className={`font-semibold ${pendingAmt > 0n ? "text-destructive" : "text-green-600"}`}
+                    className={`font-semibold ${
+                      pendingAmt > 0n ? "text-destructive" : "text-green-600"
+                    }`}
                   >
                     ₹{pendingAmt.toString()}
                   </p>

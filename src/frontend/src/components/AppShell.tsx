@@ -16,16 +16,14 @@ import {
   CalendarCheck,
   ImagePlus,
   LayoutDashboard,
+  Loader2,
   Trash2,
   Users,
   Wallet,
 } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { useLogo } from "../hooks/useLogo";
-import { useSettingsName } from "../hooks/useSettingsName";
-import { logoStore } from "../lib/logoStore";
-import { settingsStore } from "../lib/settingsStore";
+import { useSettings, useUpdateSettings } from "../hooks/useQueries";
 
 const navItems = [
   { path: "/", label: "Dashboard", icon: LayoutDashboard },
@@ -39,18 +37,21 @@ export default function AppShellLayout() {
   const navigate = useNavigate();
   const routerState = useRouterState();
   const pathname = routerState.location.pathname;
-  const instituteName = useSettingsName();
+  const { data: settings } = useSettings();
+  const instituteName = settings?.instituteName ?? "My Academy";
+  const logo = settings?.logoData ?? null;
+  const updateSettings = useUpdateSettings();
+
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [nameInput, setNameInput] = useState("");
   const [previewLogo, setPreviewLogo] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const logo = useLogo();
 
   const instituteLetter = instituteName.charAt(0).toUpperCase();
 
   function handleOpenSettings() {
     setNameInput(instituteName);
-    setPreviewLogo(logoStore.get());
+    setPreviewLogo(logo);
     setSettingsOpen(true);
   }
 
@@ -78,14 +79,12 @@ export default function AppShellLayout() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  function handleSaveSettings() {
+  async function handleSaveSettings() {
     try {
-      settingsStore.setName(nameInput.trim() || "Apex Tuition Center");
-      if (previewLogo) {
-        logoStore.set(previewLogo);
-      } else {
-        logoStore.remove();
-      }
+      await updateSettings.mutateAsync({
+        instituteName: nameInput.trim() || "My Academy",
+        logoData: previewLogo ?? undefined,
+      });
       toast.success("Settings saved");
       setSettingsOpen(false);
     } catch {
@@ -211,9 +210,13 @@ export default function AppShellLayout() {
               <Button
                 className="w-full"
                 onClick={handleSaveSettings}
+                disabled={updateSettings.isPending}
                 data-ocid="settings.save_button"
               >
-                Save Settings
+                {updateSettings.isPending ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : null}
+                {updateSettings.isPending ? "Saving..." : "Save Settings"}
               </Button>
             </div>
           </SheetContent>

@@ -42,12 +42,16 @@ export const FeeRecord = IDL.Record({
   'classesAttended' : IDL.Nat,
   'paidAmount' : IDL.Nat,
 });
-export const Settings = IDL.Record({ 'instituteName' : IDL.Text });
+export const Settings = IDL.Record({
+  'instituteName' : IDL.Text,
+  'logoData' : IDL.Opt(IDL.Text),
+});
 
 export const idlService = IDL.Service({
   'addStudent' : IDL.Func([Student], [IDL.Nat], []),
   'addTopicLog' : IDL.Func([TopicLog], [IDL.Nat], []),
   'deleteStudent' : IDL.Func([IDL.Nat], [], []),
+  'getAllFeeRecords' : IDL.Func([], [IDL.Vec(FeeRecord)], ['query']),
   'getAllStudents' : IDL.Func([], [IDL.Vec(Student)], ['query']),
   'getAttendance' : IDL.Func(
       [IDL.Nat, IDL.Text],
@@ -108,12 +112,16 @@ export const idlFactory = ({ IDL }) => {
     'classesAttended' : IDL.Nat,
     'paidAmount' : IDL.Nat,
   });
-  const Settings = IDL.Record({ 'instituteName' : IDL.Text });
+  const Settings = IDL.Record({
+    'instituteName' : IDL.Text,
+    'logoData' : IDL.Opt(IDL.Text),
+  });
   
   return IDL.Service({
     'addStudent' : IDL.Func([Student], [IDL.Nat], []),
     'addTopicLog' : IDL.Func([TopicLog], [IDL.Nat], []),
     'deleteStudent' : IDL.Func([IDL.Nat], [], []),
+    'getAllFeeRecords' : IDL.Func([], [IDL.Vec(FeeRecord)], ['query']),
     'getAllStudents' : IDL.Func([], [IDL.Vec(Student)], ['query']),
     'getAttendance' : IDL.Func(
         [IDL.Nat, IDL.Text],

@@ -32,6 +32,7 @@ import {
   useTotalIncomeForMonth,
 } from "../hooks/useQueries";
 import { useSettingsName } from "../hooks/useSettingsName";
+import { attendanceTopicStore } from "../lib/attendanceTopicStore";
 import { remarksStore } from "../lib/remarksStore";
 import { topicLogStore } from "../lib/topicLogStore";
 
@@ -44,6 +45,30 @@ function getMonthLabel(month: string) {
     month: "long",
     year: "numeric",
   });
+}
+
+/** Reusable badge for payment status */
+function StatusBadge({
+  status,
+  className: extraClass = "",
+}: {
+  status: PaymentStatus;
+  className?: string;
+}) {
+  if (status === PaymentStatus.Paid) {
+    return (
+      <Badge
+        className={`bg-[#16A34A] hover:bg-[#16A34A] text-white border-transparent ${extraClass}`}
+      >
+        {status}
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="destructive" className={extraClass}>
+      {status}
+    </Badge>
+  );
 }
 
 // ── Shared Report Letterhead ───────────────────────────────────────────────────
@@ -83,7 +108,7 @@ function ReportLetterhead({
   );
 }
 
-// ── Monthly Summary (existing) ────────────────────────────────────────────────
+// ── Monthly Summary ────────────────────────────────────────────────────────────
 function MonthlySummary() {
   const [month, setMonth] = useState(currentMonth());
   const instituteName = useSettingsName();
@@ -153,17 +178,6 @@ function MonthlySummary() {
               </p>
             )}
           </div>
-          <div className="w-px h-10 bg-border" />
-          <div>
-            <p className="text-xs text-muted-foreground">Pending Count</p>
-            <p className="text-2xl font-bold text-destructive">
-              {
-                Object.values(feeRecords).filter(
-                  (r) => r?.paymentStatus === PaymentStatus.Pending,
-                ).length
-              }
-            </p>
-          </div>
         </div>
       </div>
 
@@ -192,8 +206,7 @@ function MonthlySummary() {
                   <TableHead className="text-center">Classes</TableHead>
                   <TableHead className="text-center">Att%</TableHead>
                   <TableHead className="text-right">Adj Fee</TableHead>
-                  <TableHead className="text-right">Paid</TableHead>
-                  <TableHead className="text-right">Pending</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
                   <TableHead className="text-center">Status</TableHead>
                 </TableRow>
               </TableHeader>
@@ -202,9 +215,9 @@ function MonthlySummary() {
                   const r = feeRecords[s.id.toString()];
                   const cc = r?.classesConducted ?? 0n;
                   const ca = r?.classesAttended ?? 0n;
+                  // Adjusted Fee is display only — not used in any calculation
                   const adj = cc > 0n ? (s.monthlyFee * ca) / cc : 0n;
                   const paid = r?.paidAmount ?? 0n;
-                  const pendingAmt = adj > paid ? adj - paid : 0n;
                   const attPct =
                     cc > 0n ? Math.round(Number((ca * 100n) / cc)) : 0;
                   return (
@@ -240,21 +253,12 @@ function MonthlySummary() {
                       <TableCell className="text-right text-sm text-green-600">
                         ₹{paid.toString()}
                       </TableCell>
-                      <TableCell className="text-right text-sm text-destructive">
-                        ₹{pendingAmt.toString()}
-                      </TableCell>
                       <TableCell className="text-center">
                         {r ? (
-                          <Badge
-                            variant={
-                              r.paymentStatus === PaymentStatus.Paid
-                                ? "default"
-                                : "destructive"
-                            }
+                          <StatusBadge
+                            status={r.paymentStatus}
                             className="text-xs"
-                          >
-                            {r.paymentStatus}
-                          </Badge>
+                          />
                         ) : (
                           <Badge variant="secondary" className="text-xs">
                             No Record
@@ -309,6 +313,11 @@ function StudentReport() {
         .filter((log) => log.date.startsWith(month))
         .sort((a, b) => a.date.localeCompare(b.date))
     : [];
+
+  // Attendance topics from the Attendance tab (per-student per-date)
+  const attendanceTopics = selectedStudentId
+    ? attendanceTopicStore.getForStudentMonth(selectedStudentId, month)
+    : {};
 
   const presentCount = attendance.filter((a) => a.isPresent).length;
   const totalClasses = attendance.length;
@@ -460,23 +469,23 @@ function StudentReport() {
                       <TableHeader>
                         <TableRow className="bg-accent/40">
                           <TableHead>Date</TableHead>
-                          <TableHead>Day</TableHead>
                           <TableHead className="text-center">Status</TableHead>
+                          <TableHead>Topics Covered</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {attendance.map((a) => {
                           const d = new Date(`${a.date}T00:00:00`);
-                          const dayName = d.toLocaleDateString("en-IN", {
-                            weekday: "short",
+                          const formattedDate = d.toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
                           });
+                          const topicForDate = attendanceTopics[a.date] || "";
                           return (
                             <TableRow key={a.date}>
-                              <TableCell className="text-sm">
-                                {a.date}
-                              </TableCell>
-                              <TableCell className="text-sm text-muted-foreground">
-                                {dayName}
+                              <TableCell className="text-sm whitespace-nowrap">
+                                {formattedDate}
                               </TableCell>
                               <TableCell className="text-center">
                                 <span
@@ -488,6 +497,9 @@ function StudentReport() {
                                 >
                                   {a.isPresent ? "Present" : "Absent"}
                                 </span>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {topicForDate || "—"}
                               </TableCell>
                             </TableRow>
                           );
@@ -527,7 +539,7 @@ function StudentReport() {
                   </div>
                 </div>
 
-                {/* Topics Covered Section */}
+                {/* Topics Covered Section (from Topics tab) */}
                 <div>
                   <h3 className="text-base font-bold mb-3">
                     📚 Topics Covered
@@ -574,17 +586,15 @@ function StudentReport() {
                       <span className="text-sm text-muted-foreground">
                         Payment Status for {getMonthLabel(month)}:
                       </span>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-bold ${
-                          feeRecord.paymentStatus === PaymentStatus.Paid
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-600"
-                        }`}
-                      >
-                        {feeRecord.paymentStatus === PaymentStatus.Paid
-                          ? "✓ Paid"
-                          : "⚠ Pending"}
-                      </span>
+                      {feeRecord.paymentStatus === PaymentStatus.Paid ? (
+                        <span className="px-3 py-1 rounded-full text-sm font-bold bg-[#16A34A] text-white">
+                          ✓ Paid
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full text-sm font-bold bg-red-100 text-red-600">
+                          ⚠ Pending
+                        </span>
+                      )}
                     </div>
                   ) : (
                     <p className="text-sm text-muted-foreground italic">

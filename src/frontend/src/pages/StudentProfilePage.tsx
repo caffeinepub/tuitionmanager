@@ -48,6 +48,18 @@ function getMonthLabel(month: string) {
   });
 }
 
+/** Badge for payment status — green for Paid, destructive for Pending */
+function StatusBadge({ status }: { status: PaymentStatus }) {
+  if (status === PaymentStatus.Paid) {
+    return (
+      <Badge className="bg-[#16A34A] hover:bg-[#16A34A] text-white border-transparent">
+        {status}
+      </Badge>
+    );
+  }
+  return <Badge variant="destructive">{status}</Badge>;
+}
+
 export default function StudentProfilePage() {
   const { id } = useParams({ from: "/students/$id" });
   const navigate = useNavigate();
@@ -474,15 +486,7 @@ export default function StudentProfilePage() {
             <div className="bg-card rounded-2xl shadow-card p-4 space-y-3">
               <div className="flex justify-between items-center">
                 <p className="font-semibold">{getMonthLabel(feeMonth)}</p>
-                <Badge
-                  variant={
-                    feeRecord.paymentStatus === PaymentStatus.Paid
-                      ? "default"
-                      : "destructive"
-                  }
-                >
-                  {feeRecord.paymentStatus}
-                </Badge>
+                <StatusBadge status={feeRecord.paymentStatus} />
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>

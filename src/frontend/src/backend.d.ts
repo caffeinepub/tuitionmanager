@@ -9,6 +9,7 @@ export interface None {
 export type Option<T> = Some<T> | None;
 export interface Settings {
     instituteName: string;
+    logoData?: string;
 }
 export interface FeeRecord {
     month: string;
@@ -48,6 +49,7 @@ export interface backendInterface {
     addStudent(student: Student): Promise<bigint>;
     addTopicLog(log: TopicLog): Promise<bigint>;
     deleteStudent(id: bigint): Promise<void>;
+    getAllFeeRecords(): Promise<Array<FeeRecord>>;
     getAllStudents(): Promise<Array<Student>>;
     getAttendance(studentId: bigint, date: string): Promise<AttendanceRecord>;
     getFeeRecord(studentId: bigint, month: string): Promise<FeeRecord>;

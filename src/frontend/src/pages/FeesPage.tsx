@@ -48,6 +48,18 @@ interface FeeFormState {
   paymentStatus: PaymentStatus;
 }
 
+/** Badge variant helper — "Paid" uses green, "Pending" uses destructive */
+function StatusBadge({ status }: { status: PaymentStatus }) {
+  if (status === PaymentStatus.Paid) {
+    return (
+      <Badge className="bg-[#16A34A] hover:bg-[#16A34A] text-white border-transparent">
+        {status}
+      </Badge>
+    );
+  }
+  return <Badge variant="destructive">{status}</Badge>;
+}
+
 export default function FeesPage() {
   const [month, setMonth] = useState(currentMonth());
   const [pendingMonth, setPendingMonth] = useState(currentMonth());
@@ -191,7 +203,7 @@ export default function FeesPage() {
                       {record ? (
                         <p className="text-xs text-muted-foreground">
                           {ca.toString()}/{cc.toString()} classes · ₹
-                          {record.paidAmount.toString()} paid
+                          {record.paidAmount.toString()} amount
                         </p>
                       ) : (
                         <p className="text-xs text-muted-foreground">
@@ -201,15 +213,7 @@ export default function FeesPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       {record ? (
-                        <Badge
-                          variant={
-                            record.paymentStatus === PaymentStatus.Paid
-                              ? "default"
-                              : "destructive"
-                          }
-                        >
-                          {record.paymentStatus}
-                        </Badge>
+                        <StatusBadge status={record.paymentStatus} />
                       ) : (
                         <Badge variant="secondary">—</Badge>
                       )}
@@ -266,11 +270,6 @@ export default function FeesPage() {
             <div className="space-y-2">
               {pendingFees.map((fee, i) => {
                 const student = students.find((s) => s.id === fee.studentId);
-                const cc = fee.classesConducted;
-                const ca = fee.classesAttended;
-                const mf = student?.monthlyFee ?? 0n;
-                const adj = cc > 0n ? (mf * ca) / cc : 0n;
-                const pendingAmt = adj - fee.paidAmount;
                 return (
                   <div
                     key={`${fee.studentId}-${fee.month}`}
@@ -287,8 +286,8 @@ export default function FeesPage() {
                         {student?.name ?? `Student #${fee.studentId}`}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        Due: {fee.dueDate} · Pending: ₹
-                        {(pendingAmt > 0n ? pendingAmt : 0n).toString()}
+                        Due: {fee.dueDate} · Amount: ₹
+                        {fee.paidAmount.toString()}
                       </p>
                     </div>
                     <Badge variant="destructive">Pending</Badge>
@@ -348,7 +347,7 @@ export default function FeesPage() {
               </div>
             )}
             <div className="space-y-1.5">
-              <Label>Paid Amount (₹)</Label>
+              <Label>Amount (₹)</Label>
               <Input
                 type="number"
                 value={feeForm.paidAmount}

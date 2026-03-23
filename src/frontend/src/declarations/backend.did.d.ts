@@ -26,7 +26,7 @@ export interface FeeRecord {
 }
 export type PaymentStatus = { 'Paid' : null } |
   { 'Pending' : null };
-export interface Settings { 'instituteName' : string }
+export interface Settings { 'instituteName' : string, 'logoData' : [] | [string] }
 export interface Student {
   'id' : bigint,
   'name' : string,
@@ -47,6 +47,7 @@ export interface _SERVICE {
   'addStudent' : ActorMethod<[Student], bigint>,
   'addTopicLog' : ActorMethod<[TopicLog], bigint>,
   'deleteStudent' : ActorMethod<[bigint], undefined>,
+  'getAllFeeRecords' : ActorMethod<[], Array<FeeRecord>>,
   'getAllStudents' : ActorMethod<[], Array<Student>>,
   'getAttendance' : ActorMethod<[bigint, string], AttendanceRecord>,
   'getFeeRecord' : ActorMethod<[bigint, string], FeeRecord>,

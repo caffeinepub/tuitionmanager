@@ -6,18 +6,29 @@ import type {
   Student,
   TopicLog,
 } from "../backend";
+import { PaymentStatus } from "../backend";
 import { useActor } from "./useActor";
+
+// Extended settings type that includes logo alongside instituteName
+export interface AppSettings {
+  instituteName: string;
+  logoData?: string;
+}
 
 export function useSettings() {
   const { actor, isFetching } = useActor();
-  return useQuery<Settings>({
+  return useQuery<AppSettings>({
     queryKey: ["settings"],
     queryFn: async () => {
-      if (!actor) return { instituteName: "Apex Tuition Center" };
+      if (!actor) return { instituteName: "My Academy" };
       try {
-        return await actor.getSettings();
+        const s = await actor.getSettings();
+        return {
+          instituteName: s.instituteName,
+          logoData: s.logoData ?? undefined,
+        };
       } catch {
-        return { instituteName: "Apex Tuition Center" };
+        return { instituteName: "My Academy" };
       }
     },
     enabled: !!actor && !isFetching,
@@ -168,6 +179,30 @@ export function useAllFeeRecordsForMonth(month: string, students: Student[]) {
   });
 }
 
+/**
+ * Computes total pending fee amount across ALL students and ALL months.
+ * Fetches every fee record from the backend and sums paidAmount for Pending ones.
+ * No month filter or limit is applied. Adjusted Fee is NOT used.
+ */
+export function useAllPendingFeesTotal(_students: Student[]) {
+  const { actor, isFetching } = useActor();
+  return useQuery<bigint>({
+    queryKey: ["fees", "pending-total-all"],
+    queryFn: async () => {
+      if (!actor) return 0n;
+      const allRecords = await actor.getAllFeeRecords();
+      let total = 0n;
+      for (const rec of allRecords) {
+        if (rec.paymentStatus === PaymentStatus.Pending) {
+          total += rec.paidAmount;
+        }
+      }
+      return total;
+    },
+    enabled: !!actor && !isFetching,
+  });
+}
+
 export function useAddStudent() {
   const { actor } = useActor();
   const qc = useQueryClient();
@@ -232,7 +267,13 @@ export function useUpdateSettings() {
   const { actor } = useActor();
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (settings: Settings) => actor!.updateSettings(settings),
+    mutationFn: async (appSettings: AppSettings) => {
+      const backendSettings: Settings = {
+        instituteName: appSettings.instituteName,
+        logoData: appSettings.logoData,
+      };
+      await actor!.updateSettings(backendSettings);
+    },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
   });
 }

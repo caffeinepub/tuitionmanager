@@ -5,11 +5,10 @@ import Text "mo:core/Text";
 import List "mo:core/List";
 import Runtime "mo:core/Runtime";
 
-
-
 actor {
   public type Settings = {
     instituteName : Text;
+    logoData : ?Text;
   };
 
   public type Student = {
@@ -63,132 +62,179 @@ actor {
     };
   };
 
-  var settings : Settings = {
-    instituteName = "Default Institute";
-  };
+  // Stable settings
+  stable var settings : { instituteName : Text } = { instituteName = "My Academy" };
+  stable var stableLogoData : ?Text = null;
 
-  public type StudentId = Nat;
-  public type Month = Text;
+  // Stable counters
+  var nextStudentId : Nat = 1;
+  var nextTopicLogId : Nat = 1;
 
+  // Stable arrays for upgrade persistence
+  stable var stableStudents : [(Nat, Student)] = [];
+  stable var stableAttendance : [(Text, AttendanceRecord)] = [];
+  stable var stableTopicLogs : [(Nat, TopicLog)] = [];
+  stable var stableFeeRecords : [(Text, FeeRecord)] = [];
+  stable var stableNextStudentId : Nat = 1;
+  stable var stableNextTopicLogId : Nat = 1;
+
+  // Runtime maps
   let students = Map.empty<Nat, Student>();
   let attendance = Map.empty<Text, AttendanceRecord>();
   let topicLogs = Map.empty<Nat, TopicLog>();
   let feeRecords = Map.empty<Text, FeeRecord>();
 
-  var nextStudentId = 1;
-  var nextTopicLogId = 1;
-
-  public shared ({ caller }) func updateSettings(newSettings : Settings) : async () {
-    settings := newSettings;
+  // Restore from stable arrays on upgrade
+  system func postupgrade() {
+    for ((k, v) in stableStudents.vals()) { students.add(k, v) };
+    for ((k, v) in stableAttendance.vals()) { attendance.add(k, v) };
+    for ((k, v) in stableTopicLogs.vals()) { topicLogs.add(k, v) };
+    for ((k, v) in stableFeeRecords.vals()) { feeRecords.add(k, v) };
+    nextStudentId := stableNextStudentId;
+    nextTopicLogId := stableNextTopicLogId;
+    stableStudents := [];
+    stableAttendance := [];
+    stableTopicLogs := [];
+    stableFeeRecords := [];
   };
 
-  public query ({ caller }) func getSettings() : async Settings {
-    settings;
+  // Save to stable arrays before upgrade
+  system func preupgrade() {
+    stableStudents := students.entries().toArray();
+    stableAttendance := attendance.entries().toArray();
+    stableTopicLogs := topicLogs.entries().toArray();
+    stableFeeRecords := feeRecords.entries().toArray();
+    stableNextStudentId := nextStudentId;
+    stableNextTopicLogId := nextTopicLogId;
   };
 
-  public shared ({ caller }) func addStudent(student : Student) : async Nat {
+  public shared func updateSettings(newSettings : Settings) : async () {
+    settings := { instituteName = newSettings.instituteName };
+    stableLogoData := newSettings.logoData;
+  };
+
+  public query func getSettings() : async Settings {
+    { instituteName = settings.instituteName; logoData = stableLogoData };
+  };
+
+  public shared func addStudent(student : Student) : async Nat {
     let id = nextStudentId;
-    let newStudent : Student = {
-      student with
-      id;
-    };
-    students.add(id, newStudent);
+    students.add(id, { student with id });
     nextStudentId += 1;
     id;
   };
 
-  public shared ({ caller }) func updateStudent(id : Nat, student : Student) : async () {
-    if (not students.containsKey(id)) {
-      Runtime.trap("Student not found");
-    };
-    let updatedStudent : Student = {
-      student with id;
-    };
-    students.add(id, updatedStudent);
+  public shared func updateStudent(id : Nat, student : Student) : async () {
+    if (not students.containsKey(id)) { Runtime.trap("Student not found") };
+    students.add(id, { student with id });
   };
 
-  public query ({ caller }) func getStudent(id : Nat) : async Student {
+  public query func getStudent(id : Nat) : async Student {
     switch (students.get(id)) {
       case (null) { Runtime.trap("Student not found") };
-      case (?student) { student };
+      case (?s) { s };
     };
   };
 
-  public shared ({ caller }) func deleteStudent(id : Nat) : async () {
+  public shared func deleteStudent(id : Nat) : async () {
     students.remove(id);
   };
 
-  public query ({ caller }) func getAllStudents() : async [Student] {
+  public query func getAllStudents() : async [Student] {
     students.values().toArray().sort();
   };
 
-  public shared ({ caller }) func markAttendance(record : AttendanceRecord) : async () {
+  public shared func markAttendance(record : AttendanceRecord) : async () {
     let key = record.studentId.toText() # "_" # record.date;
     attendance.add(key, record);
   };
 
-  public query ({ caller }) func getAttendance(studentId : Nat, date : Text) : async AttendanceRecord {
+  public query func getAttendance(studentId : Nat, date : Text) : async AttendanceRecord {
     let key = studentId.toText() # "_" # date;
     switch (attendance.get(key)) {
       case (null) { Runtime.trap("Attendance record not found") };
-      case (?record) { record };
+      case (?r) { r };
     };
   };
 
-  public shared ({ caller }) func addTopicLog(log : TopicLog) : async Nat {
-    let id = nextTopicLogId;
-    let newLog : TopicLog = {
-      log with id;
+  public query func getAttendanceForStudent(studentId : Nat) : async [AttendanceRecord] {
+    let result = List.empty<AttendanceRecord>();
+    for ((_, r) in attendance.entries()) {
+      if (r.studentId == studentId) { result.add(r) };
     };
-    topicLogs.add(id, newLog);
+    result.toArray();
+  };
+
+  public shared func addTopicLog(log : TopicLog) : async Nat {
+    let id = nextTopicLogId;
+    topicLogs.add(id, { log with id });
     nextTopicLogId += 1;
     id;
   };
 
-  public shared ({ caller }) func updateTopicLog(id : Nat, log : TopicLog) : async () {
+  public shared func updateTopicLog(id : Nat, log : TopicLog) : async () {
     if (not topicLogs.containsKey(id)) { Runtime.trap("Topic log not found") };
-    let updatedLog : TopicLog = {
-      log with id;
-    };
-    topicLogs.add(id, updatedLog);
+    topicLogs.add(id, { log with id });
   };
 
-  public query ({ caller }) func getTopicLog(id : Nat) : async TopicLog {
+  public query func getTopicLog(id : Nat) : async TopicLog {
     switch (topicLogs.get(id)) {
       case (null) { Runtime.trap("Topic log not found") };
-      case (?log) { log };
+      case (?l) { l };
     };
   };
 
-  public shared ({ caller }) func upsertFeeRecord(record : FeeRecord) : async () {
+  public query func getAllTopicLogs() : async [TopicLog] {
+    topicLogs.values().toArray();
+  };
+
+  public query func getTopicLogsForStudent(studentId : Nat) : async [TopicLog] {
+    let result = List.empty<TopicLog>();
+    for ((_, l) in topicLogs.entries()) {
+      if (l.studentId == studentId) { result.add(l) };
+    };
+    result.toArray();
+  };
+
+  public shared func upsertFeeRecord(record : FeeRecord) : async () {
     let key = record.studentId.toText() # "_" # record.month;
     feeRecords.add(key, record);
   };
 
-  public query ({ caller }) func getFeeRecord(studentId : Nat, month : Text) : async FeeRecord {
+  public query func getFeeRecord(studentId : Nat, month : Text) : async FeeRecord {
     let key = studentId.toText() # "_" # month;
     switch (feeRecords.get(key)) {
       case (null) { Runtime.trap("Fee record not found") };
-      case (?record) { record };
+      case (?r) { r };
     };
   };
 
-  public query ({ caller }) func getPendingFeesForMonth(month : Text) : async [FeeRecord] {
+  public query func getFeeRecordsForStudent(studentId : Nat) : async [FeeRecord] {
     let result = List.empty<FeeRecord>();
-
-    for ((_, record) in feeRecords.entries()) {
-      if (record.month == month and record.paymentStatus == #Pending) {
-        result.add(record);
-      };
+    for ((_, r) in feeRecords.entries()) {
+      if (r.studentId == studentId) { result.add(r) };
     };
-
     result.toArray().sort();
   };
 
-  public query ({ caller }) func getTotalIncomeForMonth(month : Text) : async Nat {
-    feeRecords.values().toArray().filter(func(r) { r.month == month }).foldLeft(
-      0,
-      func(acc, record) { acc + record.paidAmount },
-    );
+  public query func getPendingFeesForMonth(month : Text) : async [FeeRecord] {
+    let result = List.empty<FeeRecord>();
+    for ((_, r) in feeRecords.entries()) {
+      if (r.month == month and r.paymentStatus == #Pending) { result.add(r) };
+    };
+    result.toArray().sort();
+  };
+
+  public query func getAllFeeRecords() : async [FeeRecord] {
+    feeRecords.values().toArray().sort();
+  };
+
+  // Returns total income for a month: sums Amount (paidAmount) only for Paid records.
+  public query func getTotalIncomeForMonth(month : Text) : async Nat {
+    var total : Nat = 0;
+    for ((_, r) in feeRecords.entries()) {
+      if (r.month == month and r.paymentStatus == #Paid) { total += r.paidAmount };
+    };
+    total;
   };
 };

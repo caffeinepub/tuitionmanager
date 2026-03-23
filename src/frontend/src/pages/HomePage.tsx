@@ -14,13 +14,12 @@ import {
 import { useState } from "react";
 import { toast } from "sonner";
 import { useActor } from "../hooks/useActor";
-import { useLogo } from "../hooks/useLogo";
 import {
+  useAllPendingFeesTotal,
   useAllStudents,
-  usePendingFeesForMonth,
+  useSettings,
   useTotalIncomeForMonth,
 } from "../hooks/useQueries";
-import { useSettingsName } from "../hooks/useSettingsName";
 import { seedSampleData } from "../lib/seedData";
 import { topicLogStore } from "../lib/topicLogStore";
 
@@ -56,11 +55,13 @@ export default function HomePage() {
   const qc = useQueryClient();
   const month = currentMonth();
 
-  const instituteName = useSettingsName();
-  const logo = useLogo();
+  const { data: settings } = useSettings();
+  const instituteName = settings?.instituteName ?? "My Academy";
+  const logo = settings?.logoData ?? null;
+
   const { data: students = [], isLoading: loadingStudents } = useAllStudents();
-  const { data: pendingFees = [], isLoading: loadingPending } =
-    usePendingFeesForMonth(month);
+  const { data: totalPendingAmount, isLoading: loadingPending } =
+    useAllPendingFeesTotal(students);
   const { data: totalIncome, isLoading: loadingIncome } =
     useTotalIncomeForMonth(month);
   const [seeding, setSeeding] = useState(false);
@@ -73,6 +74,7 @@ export default function HomePage() {
       value: loadingStudents ? null : students.length.toString(),
       sub: "Active",
       icon: Users,
+      valueClass: "text-foreground",
       ...iconChipColors[0],
     },
     {
@@ -80,13 +82,15 @@ export default function HomePage() {
       value: loadingIncome ? null : formatCurrency(totalIncome ?? 0n),
       sub: "Received",
       icon: Wallet,
+      valueClass: "text-foreground",
       ...iconChipColors[1],
     },
     {
       label: "Pending Fees",
-      value: loadingPending ? null : pendingFees.length.toString(),
-      sub: "Students",
+      value: loadingPending ? null : formatCurrency(totalPendingAmount ?? 0n),
+      sub: "Total Due",
       icon: AlertCircle,
+      valueClass: "text-red-600",
       ...iconChipColors[2],
     },
     {
@@ -94,6 +98,7 @@ export default function HomePage() {
       value: recentLogs.length.toString(),
       sub: "This month",
       icon: CalendarCheck,
+      valueClass: "text-foreground",
       ...iconChipColors[3],
     },
   ];
@@ -145,32 +150,36 @@ export default function HomePage() {
           At a Glance
         </h2>
         <div className="grid grid-cols-2 gap-3">
-          {stats.map(({ label, value, sub, icon: Icon, bg, iconColor }) => (
-            <div
-              key={label}
-              className="bg-card rounded-2xl shadow-card p-4 flex flex-col gap-2"
-              data-ocid="home.card"
-            >
+          {stats.map(
+            ({ label, value, sub, icon: Icon, bg, iconColor, valueClass }) => (
               <div
-                className={`w-9 h-9 rounded-full ${bg} flex items-center justify-center`}
+                key={label}
+                className="bg-card rounded-2xl shadow-card p-4 flex flex-col gap-2"
+                data-ocid="home.card"
               >
-                <Icon className={`w-4 h-4 ${iconColor}`} />
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  {label}
-                </p>
-                {value === null ? (
-                  <Skeleton className="h-7 w-16 mt-1" />
-                ) : (
-                  <p className="text-2xl font-bold text-foreground leading-tight">
-                    {value}
+                <div
+                  className={`w-9 h-9 rounded-full ${bg} flex items-center justify-center`}
+                >
+                  <Icon className={`w-4 h-4 ${iconColor}`} />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    {label}
                   </p>
-                )}
-                <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+                  {value === null ? (
+                    <Skeleton className="h-7 w-16 mt-1" />
+                  ) : (
+                    <p
+                      className={`text-2xl font-bold leading-tight ${valueClass}`}
+                    >
+                      {value}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+                </div>
               </div>
-            </div>
-          ))}
+            ),
+          )}
         </div>
       </section>
 

@@ -91,6 +91,7 @@ export class ExternalBlob {
 }
 export interface Settings {
     instituteName: string;
+    logoData?: string;
 }
 export interface FeeRecord {
     month: string;
@@ -130,6 +131,7 @@ export interface backendInterface {
     addStudent(student: Student): Promise<bigint>;
     addTopicLog(log: TopicLog): Promise<bigint>;
     deleteStudent(id: bigint): Promise<void>;
+    getAllFeeRecords(): Promise<Array<FeeRecord>>;
     getAllStudents(): Promise<Array<Student>>;
     getAttendance(studentId: bigint, date: string): Promise<AttendanceRecord>;
     getFeeRecord(studentId: bigint, month: string): Promise<FeeRecord>;
@@ -187,6 +189,20 @@ export class Backend implements backendInterface {
         } else {
             const result = await this.actor.deleteStudent(arg0);
             return result;
+        }
+    }
+    async getAllFeeRecords(): Promise<Array<FeeRecord>> {
+        if (this.processError) {
+            try {
+                const result = await this.actor.getAllFeeRecords();
+                return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
+            } catch (e) {
+                this.processError(e);
+                throw new Error("unreachable");
+            }
+        } else {
+            const result = await this.actor.getAllFeeRecords();
+            return from_candid_vec_n7(this._uploadFile, this._downloadFile, result);
         }
     }
     async getAllStudents(): Promise<Array<Student>> {
@@ -249,14 +265,14 @@ export class Backend implements backendInterface {
         if (this.processError) {
             try {
                 const result = await this.actor.getSettings();
-                return result;
+                return { instituteName: result.instituteName, logoData: result.logoData.length > 0 ? result.logoData[0] : undefined };
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
             const result = await this.actor.getSettings();
-            return result;
+            return { instituteName: result.instituteName, logoData: result.logoData.length > 0 ? result.logoData[0] : undefined };
         }
     }
     async getStudent(arg0: bigint): Promise<Student> {
@@ -316,16 +332,17 @@ export class Backend implements backendInterface {
         }
     }
     async updateSettings(arg0: Settings): Promise<void> {
+        const candid_arg0 = { instituteName: arg0.instituteName, logoData: arg0.logoData ? [arg0.logoData] : [] };
         if (this.processError) {
             try {
-                const result = await this.actor.updateSettings(arg0);
+                const result = await this.actor.updateSettings(candid_arg0);
                 return result;
             } catch (e) {
                 this.processError(e);
                 throw new Error("unreachable");
             }
         } else {
-            const result = await this.actor.updateSettings(arg0);
+            const result = await this.actor.updateSettings(candid_arg0);
             return result;
         }
     }

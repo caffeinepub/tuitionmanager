@@ -7,6 +7,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import AppShellLayout from "./components/AppShell";
+import InstallPrompt from "./components/InstallPrompt";
 import AttendancePage from "./pages/AttendancePage";
 import FeesPage from "./pages/FeesPage";
 import HomePage from "./pages/HomePage";
@@ -19,6 +20,7 @@ const rootRoute = createRootRoute({
     <>
       <Toaster position="top-center" richColors />
       <AppShellLayout />
+      <InstallPrompt />
     </>
   ),
 });
